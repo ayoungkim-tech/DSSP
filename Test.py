@@ -9,13 +9,14 @@ import math
 import h5py
 import scipy.sparse as sparse
 import os
+import mat73
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"       
 
 cpkt_model_number = 159
 noiseSigma = 0.0
 PhaseNumber = 11
-model_dir = 'HSIRecon_cvpr2019_Harvard_%dPhase' % (PhaseNumber)
+model_dir = 'pretrained_model/Harvard'
 out_filePath = './Result/CVPR2019/'
 block_size = 48
 channel = 31
@@ -97,7 +98,7 @@ sess = tf.Session(config=config)
 
 saver.restore(sess, './%s/CS_Saved_Model_%d.cpkt' % (model_dir, cpkt_model_number))
 
-Test_Img = './Harvard48'
+Test_Img = './Data/Test/ICVL48'
 filepaths = os.listdir(Test_Img)
 ImgNum = len(filepaths)
 batch = 77
@@ -115,8 +116,9 @@ for img_no in range(ImgNum ):
 
     imgName = filepaths[img_no]
     imgName = imgName[0:-4]
-    testData = sio.loadmat(Test_Img+'/'+filepaths[img_no])
-    Hyper_image = testData['hyper_image']
+    #testData = sio.loadmat(Test_Img+'/'+filepaths[img_no])
+    testData = mat73.loadmat(Test_Img+'/'+filepaths[img_no])# for ICVL
+    Hyper_image = testData['rad']
     patch_image = testData['patch_image']
     patch_image = np.transpose(patch_image, (3, 0, 1, 2))
 
