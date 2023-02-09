@@ -9,15 +9,16 @@ import math
 import h5py
 import scipy.sparse as sparse
 import os
+import mat73
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"       
 
 cpkt_model_number = 159
 noiseSigma = 0.0
 PhaseNumber = 11
-model_dir = 'HSIRecon_cvpr2019_Harvard_%dPhase' % (PhaseNumber)
+model_dir = 'pretrained_model/Harvard'
 out_filePath = './Result/CVPR2019/'
-block_size = 48
+block_size = 512
 channel = 31
 batch_size = 64
 learning_rate = 0.0001
@@ -97,10 +98,10 @@ sess = tf.Session(config=config)
 
 saver.restore(sess, './%s/CS_Saved_Model_%d.cpkt' % (model_dir, cpkt_model_number))
 
-Test_Img = './Harvard48'
+Test_Img = './Data/Test/ICVL'
 filepaths = os.listdir(Test_Img)
 ImgNum = len(filepaths)
-batch = 77
+batch = 1 #77
 
 Cu_input = np.zeros([block_size, block_size, channel])
 T = np.round(np.random.rand(block_size//2, block_size//2))
@@ -116,9 +117,11 @@ for img_no in range(ImgNum ):
     imgName = filepaths[img_no]
     imgName = imgName[0:-4]
     testData = sio.loadmat(Test_Img+'/'+filepaths[img_no])
-    Hyper_image = testData['hyper_image']
-    patch_image = testData['patch_image']
-    patch_image = np.transpose(patch_image, (3, 0, 1, 2))
+    #testData = mat73.loadmat(Test_Img+'/'+filepaths[img_no])# for ICVL
+    Hyper_image = testData['Iin_vals']
+    #patch_image = testData['patch_image']
+    patch_image = Hyper_image
+    #patch_image = np.transpose(patch_image, (3, 0, 1, 2))
 
     patchNum = patch_image.shape[0]
 
