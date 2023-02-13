@@ -117,7 +117,6 @@ for img_no in range(ImgNum ):
     imgName = filepaths[img_no]
     imgName = imgName[0:-4]
     testData = sio.loadmat(Test_Img+'/'+filepaths[img_no])
-    #testData = mat73.loadmat(Test_Img+'/'+filepaths[img_no])# for ICVL
     Hyper_image = testData['Iin_vals']
     #patch_image = testData['patch_image']
     patch_image = Hyper_image
