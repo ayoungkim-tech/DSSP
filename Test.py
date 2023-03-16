@@ -10,19 +10,23 @@ import h5py
 import scipy.sparse as sparse
 import os
 import mat73
+from Utils import *
+
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"       
 
 cpkt_model_number = 159
 noiseSigma = 0.0
 PhaseNumber = 11
-model_dir = 'pretrained_model/Harvard'
-out_filePath = './Result/CVPR2019/'
-block_size = 512
+train_dataset = 'Harvard'
+test_dataset = 'ICVL48'
+model_dir = 'pretrained_model/%s' % (train_dataset)
+out_filePath = './Result/CVPR2019/%s/%s/' %(train_dataset, test_dataset)
+block_size = 48
 channel = 31
-batch_size = 64
 learning_rate = 0.0001
 EpochNum = 160
+stride = 24
 
 Cu = tf.placeholder(tf.float32, [None, block_size, block_size, channel])
 X_output = tf.placeholder(tf.float32, [None, block_size, block_size, channel])
@@ -98,10 +102,10 @@ sess = tf.Session(config=config)
 
 saver.restore(sess, './%s/CS_Saved_Model_%d.cpkt' % (model_dir, cpkt_model_number))
 
-Test_Img = './Data/Test/ICVL'
+Test_Img = './Data/Test/%s' % (test_dataset)
 filepaths = os.listdir(Test_Img)
 ImgNum = len(filepaths)
-batch = 1 #77
+batch = 77
 
 Cu_input = np.zeros([block_size, block_size, channel])
 T = np.round(np.random.rand(block_size//2, block_size//2))
@@ -117,10 +121,9 @@ for img_no in range(ImgNum ):
     imgName = filepaths[img_no]
     imgName = imgName[0:-4]
     testData = sio.loadmat(Test_Img+'/'+filepaths[img_no])
-    Hyper_image = testData['Iin_vals']
-    #patch_image = testData['patch_image']
-    patch_image = Hyper_image
-    #patch_image = np.transpose(patch_image, (3, 0, 1, 2))
+    Hyper_image = testData['hyper_image']
+    patch_image = testData['patch_image']
+    patch_image = np.transpose(patch_image, (3, 0, 1, 2))
 
     patchNum = patch_image.shape[0]
 
@@ -140,10 +143,13 @@ for img_no in range(ImgNum ):
             output = np.concatenate([output, Prediction_patch], axis=3)
             y_out = np.concatenate([y_out, y_value], axis=0)
         print(output.shape)
+        
+    # Aggregate the oblique blocks into HSI
+    result_image, Hyper_image, y_out = Fusion(output, Hyper_image, y_out, block_size, stride)
 
-    out_dict = {'output': output,
-                'y_out':y_out,
-                'label': Hyper_image}
+    out_dict = {'rec_image': result_image,
+                'cassi_image':y_out,
+                'gt_image': Hyper_image}
     if not os.path.exists(out_filePath):
         os.makedirs(out_filePath)
     out_filename = out_filePath + np.str(imgName)+'.mat'
